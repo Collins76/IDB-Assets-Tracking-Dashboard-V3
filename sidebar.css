@@ -1,0 +1,89 @@
+/* Sidebar Layout */
+.app-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 210px;
+    background-color: var(--card-bg);
+    border-right: 1px solid var(--border-color);
+    padding: 2rem 1.2rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    color: var(--accent-color);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sidebar-nav a {
+    display: block;
+    padding: 0.8rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.sidebar-nav a:hover {
+    background-color: hsl(var(--primary) / 0.1);
+    color: hsl(var(--primary));
+}
+
+.sidebar-nav a.active {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+}
+
+.main-content {
+    flex-grow: 1;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll from overflowing content */
+    background-color: var(--bg-color);
+}
+
+/* Override container */
+.dashboard-container {
+    max-width: 98%;
+    /* Allow wider layout */
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Responsive Sidebar - Tablet */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 200px;
+        padding: 1.5rem 1rem;
+    }
+
+    .sidebar h2 {
+        font-size: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .sidebar-nav a {
+        font-size: 0.85rem;
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+/* Mobile sidebar is now handled by style.css with hamburger menu */

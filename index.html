@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDB 2.0 Assets Tagging Monitoring Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="images/favicon.jpg?v=2">
+    <link rel="shortcut icon" type="image/jpeg" href="images/favicon.jpg?v=2">
+    <link rel="apple-touch-icon" href="images/favicon.jpg?v=2">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- SheetJS (xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Highcharts -->
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11/highcharts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/highcharts@11/highcharts-3d.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css?v=20260410h">
+    <link rel="stylesheet" href="sidebar.css?v=20260410h">
+    <link rel="stylesheet" href="insights.css?v=20260405w">
+    <link rel="stylesheet" href="ai-styles.css?v=20260405w">
+    <link rel="stylesheet" href="switch_styles.css?v=20260405w">
+    <style>
+        html {
+            scroll-behavior: smooth
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-wrapper">
+        <!-- Mobile Hamburger Button -->
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <h2 style="padding-left: 1rem; color: hsl(var(--foreground));">IDB Monitor</h2>
+                <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">&times;</button>
+            </div>
+            <div class="sidebar-nav">
+                <a href="#" id="nav-home" class="nav-link active">🏠 Home</a>
+                <a href="#" id="nav-dashboard" class="nav-link">📊 Dashboard</a>
+
+                <div id="dashboard-sub-links" class="hidden"
+                    style="margin-left: 1.5rem; border-left: 2px solid hsl(var(--border)); padding-left: 0.5rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                    <a href="#filters" class="nav-link sub-link" style="font-size: 0.9rem; padding: 0.5rem;">🔍
+                        Filters</a>
+                    <a href="#kpis" class="nav-link sub-link" style="font-size: 0.9rem; padding: 0.5rem;">📈 KPIs</a>
+                    <a href="#map-section" class="nav-link sub-link" style="font-size: 0.9rem; padding: 0.5rem;">🗺️
+                        Map</a>
+                    <a href="#vendor" class="nav-link sub-link" style="font-size: 0.9rem; padding: 0.5rem;">🏢
+                        Vendors</a>
+                    <a href="#charts" class="nav-link sub-link" style="font-size: 0.9rem; padding: 0.5rem;">📊
+                        Charts</a>
+                    <a href="#dt-analysis" class="nav-link sub-link" style="font-size: 0.9rem; padding: 0.5rem;">📝
+                        Table</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <!-- Executive Summary View -->
+            <div id="view-home" class="exec-summary">
+                <header class="exec-header">
+                    <img src="images/ie-logo.png?v=20260405c" alt="IE Logo" class="exec-header-logo">
+                    <h1>IDB 2.0 Monitoring: Executive Summary</h1>
+                    <p>Strategic Overview of Asset Enumeration Performance & Field Operations</p>
+                    <div class="last-updated" id="execLastUpdated">Last Updated: Now</div>
+                </header>
+
+                <!-- Scrolling Credit Banner -->
+                <div class="marquee-banner">
+                    <div class="marquee-track">
+                        <span class="marquee-text">Powered by the GIS Team, Ikeja Electric</span>
+                        <span class="marquee-text">Powered by the GIS Team, Ikeja Electric</span>
+                    </div>
+                </div>
+
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <h2>The Data Speaking</h2>
+                        <div id="exec-dynamic-content">
+                            <p style="color:var(--text-secondary);">Loading data narrative...</p>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <h2>Key Metrics & Parameters</h2>
+                        <ul class="parameter-list">
+                            <li>
+                                <span class="param-icon">🏃</span>
+                                <div>
+                                    <strong>Run Rate (Velocity)</strong>
+                                    <p>Current: <span id="exec-avg-rate"
+                                            style="color: hsl(var(--foreground)); font-weight: bold;">0</span>
+                                        assets/day. <span style="color: hsl(var(--destructive));">Target: >50
+                                            assets/day/user</span></p>
+                                </div>
+                            </li>
+                            <li style="grid-column: span 2; width: 100%;">
+                                <div class="ai-assistant-container">
+                                    <div class="ai-header">
+                                        <span class="ai-icon">🤖</span>
+                                        <div>
+                                            <h3>AI Data Assistant</h3>
+                                            <p>Ask sophisticated questions about your data</p>
+                                        </div>
+                                    </div>
+                                    <div class="ai-input-wrapper">
+                                        <input type="text" id="ai-query"
+                                            placeholder="Try 'Avg run rate for Jesom' or 'Top 3 users'..."
+                                            autocomplete="off">
+                                        <button id="ai-ask-btn">Ask</button>
+                                    </div>
+                                    <div id="ai-response" class="ai-response"></div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="rec-section">
+                    <h2 style="margin-bottom: 1.5rem; text-align: center;">Strategic Recommendations for Vendor
+                        Partners</h2>
+                    <div class="rec-grid">
+                        <div class="summary-card rec-card etc-card" id="rec-card-etc">
+                            <div class="card-header">
+                                <h3>ETC Workforce</h3>
+                                <span class="status-badge" id="status-badge-etc">Loading...</span>
+                            </div>
+                            <div class="rec-content" id="rec-content-etc">
+                                <!-- Dynamic Content -->
+                            </div>
+                        </div>
+
+                        <div class="summary-card rec-card jesom-card" id="rec-card-jesom">
+                            <div class="card-header">
+                                <h3>Jesom Technology</h3>
+                                <span class="status-badge" id="status-badge-jesom">Loading...</span>
+                            </div>
+                            <div class="rec-content" id="rec-content-jesom">
+                                <!-- Dynamic Content -->
+                            </div>
+                        </div>
+
+                        <div class="summary-card rec-card ikeja-card" id="rec-card-ikeja">
+                            <div class="card-header">
+                                <h3>Ikeja Electric</h3>
+                                <span class="status-badge" id="status-badge-ikeja">Loading...</span>
+                            </div>
+                            <div class="rec-content" id="rec-content-ikeja">
+                                <!-- Dynamic Content -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-container hidden" id="view-dashboard">
+                <!-- Header -->
+                <header>
+                    <div class="dashboard-header-brand">
+                        <img src="images/ie-logo.png?v=20260405c" alt="IE Logo" class="exec-header-logo">
+                        <h1>IDB 2.0 Assets Tagging Monitoring Dashboard</h1>
+                    </div>
+                    <div class="header-controls">
+
+                        <div class="view-toggle-wrapper" id="viewModeWrapper"
+                            style="display: none; align-items: center; gap: 10px; margin-left: 10px; padding-left: 10px; border-left: 1px solid #555;">
+                            <span style="font-size: 0.85rem; color: hsl(var(--muted-foreground));">Field</span>
+                            <label class="switch">
+                                <input type="checkbox" id="viewModeToggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span style="font-size: 0.85rem; color: hsl(var(--foreground)); font-weight: 600;">Total vs
+                                Actual</span>
+                        </div>
+                        <button id="resetFiltersBtn" class="upload-btn"
+                            style="background-color: #10b981; border: 1px solid #10b981; color: white;">
+                            Reset All
+                        </button>
+                        <button id="downloadExcel" class="upload-btn">
+                            Download Excel
+                        </button>
+                        <button id="downloadPDF" class="upload-btn" style="background-color: #ef4444; border: 1px solid #ef4444; color: white;">
+                            Download PDF Report
+                        </button>
+                        <div class="last-updated" id="lastUpdated">Last Updated: Now</div>
+                    </div>
+                </header>
+
+                <!-- Scrolling Credit Banner -->
+                <div class="marquee-banner">
+                    <div class="marquee-track">
+                        <span class="marquee-text">Powered by the GIS Team, Ikeja Electric</span>
+                        <span class="marquee-text">Powered by the GIS Team, Ikeja Electric</span>
+                    </div>
+                </div>
+
+                <!-- Dashboard High-Level Insights -->
+                <div class="top-insights-row">
+                    <!-- Active Users Card -->
+                    <div class="top-insight-card top-insight-users">
+                        <div>
+                            <span class="top-insight-label">Active Users</span>
+                            <div id="topCardActiveUsers" class="top-insight-value">0</div>
+                        </div>
+                        <div class="top-insight-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Project Completion Rate Card (split: Incl. New / Excl. New) -->
+                    <div class="top-insight-card top-insight-completion">
+                        <div class="completion-label-group completion-title-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            <span class="top-insight-label" style="font-weight:600;">Project Completion Rate</span>
+                        </div>
+                        <div class="completion-split">
+                            <div class="completion-split-row">
+                                <div class="completion-header">
+                                    <span class="completion-sub-label">Include New Poles</span>
+                                    <span id="topCardCompletionRate" class="completion-rate-value green">0%</span>
+                                </div>
+                                <div class="completion-bar-track">
+                                    <div id="topCardCompletionBar" class="completion-bar-fill green" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            <div class="completion-split-row">
+                                <div class="completion-header">
+                                    <span class="completion-sub-label">Exclude New Poles</span>
+                                    <span id="topCardCompletionRateExNew" class="completion-rate-value red">0%</span>
+                                </div>
+                                <div class="completion-bar-track">
+                                    <div id="topCardCompletionBarExNew" class="completion-bar-fill red" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slicers / Filters -->
+                <section class="filters-section" id="filters">
+                    <div class="filter-group">
+                        <label>Vendor</label>
+                        <select id="vendorFilter">
+                            <option value="All">All Vendors</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Business Unit</label>
+                        <select id="buFilter">
+                            <option value="All">All Business Units</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Undertaking</label>
+                        <select id="utFilter">
+                            <option value="All">All Undertakings</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>User</label>
+                        <select id="userFilter">
+                            <option value="All">All Users</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="feederFilter">Feeder</label>
+                        <select id="feederFilter">
+                            <option value="">All Feeders</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>DT Name</label>
+                        <select id="dtFilter">
+                            <option value="All">All DTs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="upriserFilter">Upriser</label>
+                        <select id="upriserFilter">
+                            <option value="All">All Uprisers</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="materialFilter">Pole Material</label>
+                        <select id="materialFilter">
+                            <option value="">All Materials</option>
+                            <option value="Concrete">Concrete</option>
+                            <option value="Wood">Wooden</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFilter">Date</label>
+                        <select id="dateFilter">
+                            <option value="All">All Dates</option>
+                        </select>
+                    </div>
+                </section> <!-- Date Filter could be added here -->
+
+                <!-- Duplicate SLRN Warning Banner -->
+                <div id="duplicate-warning-banner" class="duplicate-warning-banner" style="display:none;">
+                    <div class="duplicate-warning-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span id="duplicate-warning-msg">Duplicate SLRNs detected.</span>
+                    </div>
+                    <button class="duplicate-warning-close" onclick="this.parentElement.style.display='none'" title="Dismiss">&times;</button>
+                </div>
+
+                <!-- KPI Cards -->
+                <section class="kpi-section" id="kpis">
+                    <!-- 1. Total Poles (Records) -->
+                    <div class="kpi-card-modern" id="card-records">
+                        <div class="kpi-border-top blue"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">TOTAL POLES (INCLUDING NEW POLES)</span>
+                            <div class="kpi-icon-bg blue">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-records">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-records">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-records">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill blue" id="kpi-bar-records" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-records">Remaining: --</span>
+                            <span class="footer-status color-blue">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 1b. Total Poles excluding New Poles -->
+                    <div class="kpi-card-modern" id="card-records-exnew">
+                        <div class="kpi-border-top purple"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">TOTAL POLES (EXCLUDING NEW POLES)</span>
+                            <div class="kpi-icon-bg purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                    <line x1="2" y1="2" x2="22" y2="22"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-records-exnew">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-records-exnew">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-records-exnew">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill purple" id="kpi-bar-records-exnew" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-records-exnew">Remaining: --</span>
+                            <span class="footer-status color-blue">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Good Condition (Concrete) -->
+                    <div class="kpi-card-modern" id="card-concrete">
+                        <div class="kpi-border-top green"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">GOOD COND. POLES</span>
+                            <div class="kpi-icon-bg green">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-concrete">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-concrete">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-concrete">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill green" id="kpi-bar-concrete" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-concrete">Remaining: --</span>
+                            <span class="footer-status color-green">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Bad Poles (Wooden) -->
+                    <div class="kpi-card-modern" id="card-wooden">
+                        <div class="kpi-border-top orange"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">BAD POLES (REPLACE)</span>
+                            <div class="kpi-icon-bg orange">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-wooden">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-wooden">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-wooden">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill orange" id="kpi-bar-wooden" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-wooden">Remaining: --</span>
+                            <span class="footer-status color-orange">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. New Poles (Active Users Slot) -->
+                    <div class="kpi-card-modern" id="card-users">
+                        <div class="kpi-border-top purple"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title" id="kpi-title-users">NEW POLES (INSTALL)</span>
+                            <div class="kpi-icon-bg purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <circle cx="12" cy="12" r="6"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-users">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-users">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-users">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill purple" id="kpi-bar-users" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-users">Remaining: --</span>
+                            <span class="footer-status color-blue">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. Feeders -->
+                    <div class="kpi-card-modern" id="card-feeders">
+                        <div class="kpi-border-top cyan"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">TOTAL FEEDERS</span>
+                            <div class="kpi-icon-bg cyan">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-feeders">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-feeders">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-feeders">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill bg-cyan-500" style="background-color: #06b6d4; width: 0%"
+                                    id="kpi-bar-feeders"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-feeders">Remaining: --</span>
+                            <span class="footer-status color-blue">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 6. DTs -->
+                    <div class="kpi-card-modern" id="card-dts">
+                        <div class="kpi-border-top blue"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">TOTAL DTS</span>
+                            <div class="kpi-icon-bg blue">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-dts">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-dts">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-dts">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill blue" id="kpi-bar-dts" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-dts">Remaining: --</span>
+                            <span class="footer-status color-blue">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- 7. Buildings -->
+                    <div class="kpi-card-modern" id="card-buildings">
+                        <div class="kpi-border-top purple"></div>
+                        <div class="kpi-header">
+                            <span class="kpi-title">TOTAL BUILDINGS</span>
+                            <div class="kpi-icon-bg purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="kpi-body">
+                            <div class="kpi-stat">
+                                <span class="stat-label">Ex. Poles</span>
+                                <span class="stat-value" id="kpi-boq-buildings">--</span>
+                            </div>
+                            <div class="kpi-stat align-right">
+                                <span class="stat-label">Actual</span>
+                                <span class="stat-value color-green" id="kpi-act-buildings">--</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span id="kpi-prog-buildings">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill purple" id="kpi-bar-buildings" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="kpi-footer">
+                            <span class="remaining-text" id="kpi-rem-buildings">Remaining: --</span>
+                            <span class="footer-status color-blue">In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- Keeping placeholders for others logic if needed, but styling implicitly handles them -->
+
+                </section>
+
+                <!-- Map Section & Key Insights -->
+                <section class="map-section" id="map-section" style="margin-bottom: 2rem;">
+                    <div class="map-insights-grid">
+
+                        <!-- Map -->
+                        <div class="chart-container" style="min-height: 500px; display: flex; flex-direction: column;">
+                            <h2 style="display: flex; align-items: center; gap: 10px;">🗺️ Geographical Distribution
+                            </h2>
+                            <div id="map" style="flex-grow: 1; min-height: 400px; width: 100%; border-radius: 8px;">
+                            </div>
+                            <div class="map-legend" style="margin-top: 10px; font-size: 0.9rem; color: #a0a0a0;">
+                                <span style="color: #0EA5E9; margin-right: 15px;">● ETC Workforce</span>
+                                <span style="color: #f97316; margin-right: 15px;">● Jesom Technology</span>
+                                <span style="color: #eab308;">● Ikeja Electric</span>
+                            </div>
+                        </div>
+
+                        <!-- Strategic Insights Panel -->
+                        <div class="insights-card">
+                            <h2>KEY INSIGHTS & DETAILS</h2>
+                            <div id="keyInsightsContent"
+                                style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                                <!-- Populated by JS -->
+                                <div style="text-align: center; color: #a0a0a0;">Loading Analysis...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Vendor Performance Comparison -->
+                <section class="vendor-section" id="vendor" style="margin-bottom: 2rem;">
+                    <div class="charts-grid">
+                        <div class="chart-container" style="display: flex; flex-direction: column;">
+                            <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">📊 Total
+                                Assets Enumerated (Vendor)</h2>
+                            <div id="vendorTotalChart" style="flex: 1; min-height: 350px;"></div>
+                        </div>
+                        <div class="chart-container" style="display: flex; flex-direction: column;">
+                            <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">⚡ Average
+                                Daily Run Rate (Vendor)</h2>
+                            <div id="vendorRunRateChart" style="flex: 1; min-height: 350px;"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Grid -->
+                <section class="charts-grid" id="charts">
+                    <!-- User Performance Bar Chart -->
+                    <div class="chart-container wide">
+                        <h2>User Performance (Records Captured)</h2>
+                        <div id="userPerformanceChart"></div>
+                    </div>
+
+                    <!-- Activity & Distribution (Split Row) -->
+                    <div class="chart-split-row">
+                        <!-- Activity Over Time -->
+                        <div class="chart-container">
+                            <h2>Daily Run Rate Comparison: All Vendors</h2>
+                            <div id="projectVelocityChart"></div>
+                        </div>
+
+                        <!-- Pole Type Distribution -->
+                        <div class="chart-container">
+                            <h2>Pole Type Distribution</h2>
+                            <div id="poleTypeChart"></div>
+                        </div>
+                    </div>
+
+                    <!-- Issues by Field Staff (Stacked Bar) -->
+                    <div class="chart-container wide">
+                        <h2>Distribution of Reported Issues by Field Staff</h2>
+                        <div id="staffIssuesChart"></div>
+                    </div>
+
+                    <!-- Equal split row for Undertaking and Feeder -->
+                    <div class="split-row">
+                        <!-- Undertaking Breakdown -->
+                        <div class="chart-container">
+                            <h2>Undertaking Distribution</h2>
+                            <div id="undertakingChart"></div>
+                        </div>
+
+                        <!-- Feeder Breakdown -->
+                        <div class="chart-container">
+                            <h2>Top Feeders by Captured Assets</h2>
+                            <div id="feederChart"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Detailed DT Analysis Table -->
+                <!-- Detailed DT Analysis Table -->
+                <!-- Variance Charts Section (Hidden by default) -->
+                <section class="charts-grid hidden" id="variance-charts">
+                    <!-- Target vs Actual (Bullet/Bar) -->
+                    <div class="chart-container wide">
+                        <h2>Target vs. Actual Progress (Feeders & DTs)</h2>
+                        <div id="targetActualChart"></div>
+                    </div>
+
+                    <!-- Pole Health Reconciliation -->
+                    <div class="chart-container wide">
+                        <h2>Pole Health Reconciliation (Top 10 DTs)</h2>
+                        <div id="poleHealthChart"></div>
+                    </div>
+                </section>
+
+                <section class="table-section" id="dt-analysis" style="margin-top: 2rem;">
+                    <div class="table-controls"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+                        <div id="tableInfo" style="color: #a0a0a0; font-size: 0.9rem;">Showing 0 of 0 DTs</div>
+                        <div class="search-wrapper" style="display: flex; gap: 10px; position: relative;">
+                            <!-- Column Filter Dropdown -->
+                            <div class="column-filter-container">
+                                <button id="columnFilterBtn" class="filter-btn">
+                                    <span>Select Columns</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <polygon points="6 9 12 15 18 9"></polygon>
+                                    </svg>
+                                </button>
+                                <div id="columnFilterMenu" class="column-menu" style="display: none;">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Existing Search (Kept for functionality, but styled to fit) -->
+                            <input type="text" id="dtSearchInput" placeholder="Search Data..."
+                                style="padding: 0.5rem; border-radius: 6px; border: 1px solid #334155; background: #1e1e24; color: #fff; width: 200px;"
+                                autocomplete="off">
+                            <div id="searchSuggestions" class="search-suggestions"></div>
+                        </div>
+                    </div>
+                    <div class="chart-container wide" style="height: auto; min-height: 400px; overflow-x: auto;">
+                        <h2 style="margin-bottom: 10px;">DT Performance & Field Officer Analysis</h2>
+                        <table id="dtTable" class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-index">#</th>
+                                    <th class="col-dtName">DT Name</th>
+                                    <th class="col-feeder">Feeder Name</th>
+                                    <th class="col-bu">BU</th>
+                                    <th class="col-undertaking">Undertaking</th>
+                                    <th class="col-vendor">Vendor</th>
+                                    <th class="col-users">Field Officers</th>
+                                    <th class="col-boqTotal">Ex. Poles</th>
+                                    <th class="col-newPoles">New Poles (Install)</th>
+                                    <th class="col-actualTotal">Actual</th>
+                                    <th class="col-remaining">Remaining</th>
+                                    <th class="col-concrete">Concrete</th>
+                                    <th class="col-wooden">Wooden</th>
+                                    <th class="col-progress">Progress</th>
+                                    <th class="col-status">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination Controls -->
+                    <div id="paginationControls" class="pagination-container"
+                        style="display: flex; justify-content: center; margin-top: 1rem; gap: 0.5rem;">
+                        <!-- Buttons added by JS -->
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <footer>
+                    <p>IDB 2.0 Monitoring System &copy; 2026</p>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- jsPDF for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js?v=20260410g"></script>
+</body>
+
+</html>
