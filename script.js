@@ -546,45 +546,49 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Dashboard - Auto Fetch
     // CRITICAL: To update data, upload your file to Supabase as "converted_data_latest.json".
     // Do NOT change this code. Just overwrite the file in Supabase.
-    const fieldDataUrl = "https://mvfguayhttcdeibomjru.supabase.co/storage/v1/object/public/dashboard-assets/converted_data_latest.json";
+    const fieldDataUrls = [
+        "https://mvfguayhttcdeibomjru.supabase.co/storage/v1/object/public/dashboard-assets/converted_data_latest.json",
+        "https://zgypltdsqjhftnxadunu.supabase.co/storage/v1/object/public/dashboard-assets/converted_data_latest.json"
+    ];
 
-    const boqDataUrl = "https://mvfguayhttcdeibomjru.supabase.co/storage/v1/object/public/dashboard-assets/BOQ-IDB.json";
+    const boqDataUrls = [
+        "https://mvfguayhttcdeibomjru.supabase.co/storage/v1/object/public/dashboard-assets/BOQ-IDB.json",
+        "https://zgypltdsqjhftnxadunu.supabase.co/storage/v1/object/public/dashboard-assets/BOQ-IDB.json"
+    ];
 
-    const fetchWithFallback = async (primaryUrl, localPath, githubRawUrl) => {
-        try {
-            const res = await fetch(primaryUrl + '?t=' + new Date().getTime());
-            if (!res.ok) throw new Error('Supabase network response was not ok');
-            return await res.json();
-        } catch (error) {
-            console.warn(`Fetch from Supabase failed, falling back to local file ${localPath}...`, error);
+    const fetchWithFallback = async (primaryUrls, localPath, githubRawUrl) => {
+        const urls = Array.isArray(primaryUrls) ? primaryUrls : [primaryUrls];
+        for (const url of urls) {
             try {
-                const resFallback = await fetch(localPath + '?t=' + new Date().getTime());
-                if (!resFallback.ok) throw new Error('Fallback network response was not ok');
-                return await resFallback.json();
-            } catch (fallbackError) {
-                console.warn(`Local fallback also failed, trying GitHub Raw Content...`, fallbackError);
-                try {
-                    const resGithub = await fetch(githubRawUrl + '?t=' + new Date().getTime());
-                    if (!resGithub.ok) throw new Error('GitHub Raw network response was not ok');
-                    return await resGithub.json();
-                } catch (finalError) {
-                    console.error('All data loading mechanisms failed.', finalError);
-                    throw finalError; // Triggers the alert
-                }
+                const res = await fetch(url + '?t=' + new Date().getTime());
+                if (!res.ok) throw new Error(`Supabase response not ok (${url})`);
+                return await res.json();
+            } catch (error) {
+                console.warn(`Fetch from ${url} failed, trying next source...`, error);
             }
+        }
+        try {
+            const resFallback = await fetch(localPath + '?t=' + new Date().getTime());
+            if (!resFallback.ok) throw new Error('Fallback network response was not ok');
+            return await resFallback.json();
+        } catch (fallbackError) {
+            console.warn(`Local fallback also failed, trying GitHub Raw Content...`, fallbackError);
+            const resGithub = await fetch(githubRawUrl + '?t=' + new Date().getTime());
+            if (!resGithub.ok) throw new Error('GitHub Raw network response was not ok');
+            return await resGithub.json();
         }
     };
 
     Promise.all([
         fetchWithFallback(
-            fieldDataUrl,
+            fieldDataUrls,
             './converted_data_latest.json',
-            'https://raw.githubusercontent.com/Collins76/IDB-Assets-Tracking-Dashboard-V3/main/converted_data_latest.json'
+            'https://raw.githubusercontent.com/Collins76/IDB-2.0-Assets-Tracking-Dashboard-V2/main/converted_data_latest.json'
         ),
         fetchWithFallback(
-            boqDataUrl,
+            boqDataUrls,
             './BOQ-IDB.json',
-            'https://raw.githubusercontent.com/Collins76/IDB-Assets-Tracking-Dashboard-V3/main/BOQ-IDB.json'
+            'https://raw.githubusercontent.com/Collins76/IDB-2.0-Assets-Tracking-Dashboard-V2/main/BOQ-IDB.json'
         )
     ])
     .catch(error => {
@@ -599,40 +603,14 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('[Dashboard] Skipping processing — data not available.');
             return;
         }
+        // Some exports wrap the records under a sheet key (e.g. {"Sheet2": [...]})
+        if (!Array.isArray(fieldData) && fieldData && typeof fieldData === 'object') {
+            fieldData = fieldData.Sheet2 || fieldData.Sheet1 || Object.values(fieldData).find(Array.isArray) || [];
+        }
+        if (!Array.isArray(boq) && boq && typeof boq === 'object') {
+            boq = boq.Sheet2 || boq.Sheet1 || Object.values(boq).find(Array.isArray) || [];
+        }
         try {
-            // V3: Allowlist of 20 SHOMOLU feeders. Field data uses "Feeder";
-            // BOQ uses "FEEDER NAME". Match case-insensitively & ignore spacing
-            // differences so minor variants in source files don't drop rows.
-            const ALLOWED_FEEDERS_V3 = [
-                "11-IgbobiINJ-T2-Market",
-                "11-OworoINJ-T3-Gbagada",
-                "11-OguduINJ-T1-Ogudu",
-                "11-IlupejuINJ-T3-Palmgrove",
-                "11-OguduINJ-T2-Alapere",
-                "11-MarylandINJ-T1-Okupe",
-                "11-OguduINJ-T3-Soluyi",
-                "11-MagodoINJ-T2-CMD",
-                "11-OguduINJ-T1-Express",
-                "11-IgbobiINJ-T3-Ikorodu",
-                "11-New OworoINJ-T1-Odunsi",
-                "11-IgbobiINJ-T3-Railway",
-                "11-IgbobiINJ-T2-Adurosakin",
-                "11-OguduINJ-T3-Kola Adeshina",
-                "11-IsheriINJ-T1-Isheri",
-                "11-WasimiINJ-T1-Araromi",
-                "11-MarylandINJ-T1-Ketu",
-                "11-MarylandINJ-T3-Sylvia",
-                "11-OguduINJ-T2-Oriola",
-                "11-OguduINJ-T1-CAC"
-            ];
-            const normalizeFeeder = (name) => (name || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
-            const allowedSet = new Set(ALLOWED_FEEDERS_V3.map(normalizeFeeder));
-            const beforeField = fieldData.length;
-            fieldData = fieldData.filter(item => allowedSet.has(normalizeFeeder(item.Feeder)));
-            const beforeBoq = boq.length;
-            boq = boq.filter(item => allowedSet.has(normalizeFeeder(item["FEEDER NAME"])));
-            console.log(`[V3 Filter] Field rows: ${beforeField} → ${fieldData.length}; BOQ rows: ${beforeBoq} → ${boq.length}`);
-
             // Process Field Data
             fieldData.forEach(item => {
                 item.Vendor_Name = inferVendor(item.User);
