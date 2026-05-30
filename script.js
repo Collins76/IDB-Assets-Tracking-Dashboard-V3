@@ -542,6 +542,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'No ID';
     }
 
+    // === V3 SCOPE: restrict the ENTIRE dashboard to the 20 approved SHOMOLU feeders ===
+    // Every KPI card, chart, table, filter dropdown, map marker and the AI assistant
+    // derive from globalData / boqData, so filtering both datasets here — at the single
+    // point where data enters the app — guarantees only these feeders are ever shown.
+    // To change the dashboard scope later, edit ONLY this list.
+    const ALLOWED_FEEDERS = [
+        "11-IgbobiINJ-T2-Market",
+        "11-OworoINJ-T3-Gbagada",
+        "11-OguduINJ-T1-Ogudu",
+        "11-IlupejuINJ-T3-Palmgrove",
+        "11-OguduINJ-T2-Alapere",
+        "11-MarylandINJ-T1-Okupe",
+        "11-OguduINJ-T3-Soluyi",
+        "11-MagodoINJ-T2-CMD",
+        "11-OguduINJ-T1-Express",
+        "11-IgbobiINJ-T3-Ikorodu",
+        "11-New OworoINJ-T1-Odunsi",
+        "11-IgbobiINJ-T3-Railway",
+        "11-IgbobiINJ-T2-Adurosakin",
+        "11-OguduINJ-T3-Kola Adeshina",
+        "11-IsheriINJ-T1-Isheri",
+        "11-WasimiINJ-T1-Araromi",
+        "11-MarylandINJ-T1-Ketu",
+        "11-MarylandINJ-T3-Sylvia",
+        "11-OguduINJ-T2-Oriola",
+        "11-OguduINJ-T1-CAC"
+    ];
+    const _normFeeder = (s) => String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase();
+    const ALLOWED_FEEDER_SET = new Set(ALLOWED_FEEDERS.map(_normFeeder));
+    const isAllowedFeeder = (name) => ALLOWED_FEEDER_SET.has(_normFeeder(name));
+    const filterToAllowedFeeders = (rows, key) =>
+        Array.isArray(rows) ? rows.filter((r) => r && isAllowedFeeder(r[key])) : rows;
+
     // Initialize Dashboard
     // Initialize Dashboard - Auto Fetch
     // CRITICAL: To update data, upload your file to Supabase as "converted_data_latest.json".
@@ -610,38 +643,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!Array.isArray(boq) && boq && typeof boq === 'object') {
             boq = boq.Sheet2 || boq.Sheet1 || Object.values(boq).find(Array.isArray) || [];
         }
-        // V3: Allowlist of 20 SHOMOLU feeders. Field data uses "Feeder";
-        // BOQ uses "FEEDER NAME". Match case-insensitively & ignore spacing.
-        const ALLOWED_FEEDERS_V3 = [
-            "11-IgbobiINJ-T2-Market",
-            "11-OworoINJ-T3-Gbagada",
-            "11-OguduINJ-T1-Ogudu",
-            "11-IlupejuINJ-T3-Palmgrove",
-            "11-OguduINJ-T2-Alapere",
-            "11-MarylandINJ-T1-Okupe",
-            "11-OguduINJ-T3-Soluyi",
-            "11-MagodoINJ-T2-CMD",
-            "11-OguduINJ-T1-Express",
-            "11-IgbobiINJ-T3-Ikorodu",
-            "11-New OworoINJ-T1-Odunsi",
-            "11-IgbobiINJ-T3-Railway",
-            "11-IgbobiINJ-T2-Adurosakin",
-            "11-OguduINJ-T3-Kola Adeshina",
-            "11-IsheriINJ-T1-Isheri",
-            "11-WasimiINJ-T1-Araromi",
-            "11-MarylandINJ-T1-Ketu",
-            "11-MarylandINJ-T3-Sylvia",
-            "11-OguduINJ-T2-Oriola",
-            "11-OguduINJ-T1-CAC"
-        ];
-        const normalizeFeeder = (name) => (name || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
-        const allowedSet = new Set(ALLOWED_FEEDERS_V3.map(normalizeFeeder));
-        const beforeField = fieldData.length;
-        fieldData = fieldData.filter(item => allowedSet.has(normalizeFeeder(item.Feeder)));
-        const beforeBoq = boq.length;
-        boq = boq.filter(item => allowedSet.has(normalizeFeeder(item["FEEDER NAME"])));
-        console.log(`[V3 Filter] Field rows: ${beforeField} -> ${fieldData.length}; BOQ rows: ${beforeBoq} -> ${boq.length}`);
-
+        // V3: keep only the 20 approved SHOMOLU feeders across BOTH datasets so every
+        // downstream KPI, chart, table, filter and map marker reflects this scope.
+        const _fieldBefore = Array.isArray(fieldData) ? fieldData.length : 0;
+        const _boqBefore = Array.isArray(boq) ? boq.length : 0;
+        fieldData = filterToAllowedFeeders(fieldData, 'Feeder');
+        boq = filterToAllowedFeeders(boq, 'FEEDER NAME');
+        console.log(`[Dashboard] Feeder allow-list applied — field: ${_fieldBefore}→${fieldData.length}, BOQ: ${_boqBefore}→${boq.length} (scope: ${ALLOWED_FEEDERS.length} feeders).`);
         try {
             // Process Field Data
             fieldData.forEach(item => {
