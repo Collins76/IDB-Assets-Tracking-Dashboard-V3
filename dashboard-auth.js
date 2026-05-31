@@ -129,17 +129,25 @@
         gotoLogin();
         return;
       }
-      // Continue capturing this session in the audit trail.
-      IDB.ensureTracking();
+      // Verify the account is still active, then continue the audit trail.
       IDB.sb
         .from("profiles")
-        .select("role, full_name")
+        .select("role, full_name, is_active")
         .eq("id", session.user.id)
         .single()
         .then(function (r) {
+          if (r.data && r.data.is_active === false) {
+            // An admin deactivated this account -> sign out and bounce to login.
+            IDB.logout().then(function () {
+              location.replace("login.html?deactivated=1");
+            });
+            return;
+          }
+          IDB.ensureTracking();
           renderLoggedIn(session, r.data || { role: "viewer" });
         })
         .catch(function () {
+          IDB.ensureTracking();
           renderLoggedIn(session, { role: "viewer" });
         });
     });

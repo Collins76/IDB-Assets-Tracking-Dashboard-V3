@@ -47,6 +47,24 @@
       });
   }
 
+  // Fetch role + active status together (used to block deactivated accounts).
+  function getProfile(userId) {
+    return sb
+      .from("profiles")
+      .select("role, is_active")
+      .eq("id", userId)
+      .single()
+      .then(function (r) {
+        return r.data || { role: "viewer", is_active: true };
+      })
+      .catch(function () {
+        return { role: "viewer", is_active: true };
+      });
+  }
+
+  var DEACTIVATED_MSG =
+    "Your account has been deactivated. Please contact an administrator.";
+
   function redirectFor(role) {
     var next = safeNext();
     if (next) {
@@ -86,14 +104,29 @@
       .signInWithPassword({ email: email, password: password })
       .then(function (res) {
         if (res.error) {
-          showMsg(res.error.message, "error");
+          // A deactivated (banned) account is rejected by the auth API — show
+          // a clear message instead of the raw "User is banned" error.
+          var m = res.error.message || "Sign in failed";
+          if (/ban|deactiv|disabled/i.test(m)) m = DEACTIVATED_MSG;
+          showMsg(m, "error");
           btn.disabled = false;
           btn.textContent = "Sign In";
           return;
         }
         var user = res.data.user;
-        showMsg("Welcome back. Loading…", "ok");
-        getRole(user.id).then(function (role) {
+        // Defense-in-depth: block sign-in if the profile is deactivated, even
+        // if the auth-level ban hasn't fully propagated yet.
+        getProfile(user.id).then(function (profile) {
+          if (profile && profile.is_active === false) {
+            sb.auth.signOut().then(function () {
+              showMsg(DEACTIVATED_MSG, "error");
+              btn.disabled = false;
+              btn.textContent = "Sign In";
+            });
+            return;
+          }
+          showMsg("Welcome back. Loading…", "ok");
+          var role = profile ? profile.role : "viewer";
           // Capture the login footprint, then route by role.
           withTimeout(IDB.recordLogin(user), 5000).then(function () {
             redirectFor(role);
@@ -197,6 +230,12 @@
       ga.style.display = "";
       ga.href = "admin.html";
     }
+  }
+
+  // If an admin deactivated this account, we were redirected here with a flag.
+  if (qparam("deactivated")) {
+    setTab("signin");
+    showMsg(DEACTIVATED_MSG, "error");
   }
 
   // On load: if there is already a valid session, show the session panel.

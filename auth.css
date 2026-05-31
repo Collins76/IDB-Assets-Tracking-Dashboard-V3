@@ -186,6 +186,22 @@ a:hover {
   padding: 0.4rem 0.7rem;
   font-size: 0.8rem;
 }
+.btn-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.btn-warning:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.25);
+}
+.btn-success {
+  background: hsl(var(--accent) / 0.15);
+  color: #7ef0cf;
+  border-color: hsl(var(--accent) / 0.4);
+}
+.btn-success:hover:not(:disabled) {
+  background: hsl(var(--accent) / 0.25);
+}
 
 .msg {
   margin-top: 1rem;
@@ -369,6 +385,17 @@ tbody tr:last-child td {
 .badge.evt.resume {
   background: hsl(var(--muted) / 0.8);
   color: var(--txt-dim);
+}
+.badge.active {
+  background: hsl(var(--accent) / 0.15);
+  color: #7ef0cf;
+}
+.badge.inactive {
+  background: hsl(var(--destructive) / 0.18);
+  color: #ff8a8a;
+}
+tr.is-inactive {
+  background: hsl(var(--destructive) / 0.06);
 }
 
 .row-actions {
