@@ -317,9 +317,12 @@ document.addEventListener('DOMContentLoaded', () => {
             'dolujide', 'eodiana', 'jmark', 'aezekiel', 'ponwubiko'
         ]);
 
-        if (etcUsers.has(user)) return 'ETC Workforce';
-        if (jesomUsers.has(user)) return 'Jesom Technology';
-        if (user && ikejaUsers.has(user.toLowerCase())) return 'Ikeja Electric';
+        // Live exports store usernames with inconsistent casing (e.g. 'KAdebayo',
+        // 'TTOPE', 'KIsmail'), so every set lookup is done on the lowercase form.
+        const u = user ? String(user).toLowerCase() : '';
+        if (etcUsers.has(u)) return 'ETC Workforce';
+        if (jesomUsers.has(u)) return 'Jesom Technology';
+        if (ikejaUsers.has(u)) return 'Ikeja Electric';
 
         // Fallback heuristic: Many ETC users start with 'a' followed by a name
         if (user && user.startsWith('a') && user.length > 3) return 'ETC Workforce';
